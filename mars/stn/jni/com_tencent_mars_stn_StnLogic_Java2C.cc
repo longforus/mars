@@ -147,6 +147,17 @@ JNIEXPORT void JNICALL Java_com_tencent_mars_stn_StnLogic_setBackupIPs
 
 	SetBackupIPs(host, backupip_list);
 }
+/*
+ * Class:     com_tencent_mars_stn_StnLogic_Java2C
+ * Method:    setNoopingBody
+ * Signature: (Ljava/lang/String;)V
+ */
+DEFINE_FIND_STATIC_METHOD(KJava2C_setNoopingBody, KNetJava2C, "setNoopingBody", "(Ljava/lang/String;)V")
+JNIEXPORT void JNICALL Java_com_tencent_mars_stn_StnLogic_setNoopingBody
+  (JNIEnv *_env, jclass, jstring _body) {
+	std::string body = (NULL == _body ? "" : ScopedJstring(_env, _body).GetChar());
+	SetNoopingBody(body);
+}
 
 /*
  * Class:     com_tencent_mars_stn_StnLogic_Java2C

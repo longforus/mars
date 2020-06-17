@@ -241,6 +241,10 @@ void (*SetBackupIPs)(const std::string& host, const std::vector<std::string>& ip
 = [](const std::string& host, const std::vector<std::string>& iplist) {
 	NetSource::SetBackupIPs(host, iplist);
 };
+void (*SetNoopingBody)(const std::string& host)
+= [](const std::string& host) {
+	NetSource::SetNoopingBody(host);
+};
 
 void (*SetSignallingStrategy)(long _period, long _keepTime)
 = [](long _period, long _keepTime) {

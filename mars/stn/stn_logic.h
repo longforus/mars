@@ -95,7 +95,8 @@ namespace stn{
     // if debugip is not empty, iplist will be ignored.
     // iplist will be used when newdns/dns ip is not available.
 	extern void (*SetBackupIPs)(const std::string& host, const std::vector<std::string>& iplist);
-    
+
+	extern void (*SetNoopingBody)(const std::string& host);
 
     // async function.
 	extern bool (*StartTask)(const Task& task);

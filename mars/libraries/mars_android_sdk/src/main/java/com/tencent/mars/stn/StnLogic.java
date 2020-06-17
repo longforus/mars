@@ -301,6 +301,12 @@ public class StnLogic {
      */
     public static native void setDebugIP(final String host, final String ip);
 
+    /**
+     * 设置booping body
+     * @param noopingBody  body
+     */
+    public static native void setNoopingBody(final String noopingBody);
+
     //async call
     public static native void startTask(final Task task);
 

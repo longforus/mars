@@ -19,7 +19,7 @@
  */
 
 #include "longlink_packer.h"
-
+#include "mars/stn/src/net_source.h"
 #ifndef WIN32
 #include <arpa/inet.h>
 #endif // !WIN32
@@ -136,7 +136,9 @@ uint32_t (*signal_keep_cmdid)()
 
 void (*longlink_noop_req_body)(AutoBuffer& _body, AutoBuffer& _extend)
 = [](AutoBuffer& _body, AutoBuffer& _extend) {
-    
+     std::string _bodyStr =   NetSource::GetNoopingBody();
+     const char *cstr = _bodyStr.c_str();
+      _body.Write(cstr);
 };
     
 void (*longlink_noop_resp_body)(const AutoBuffer& _body, const AutoBuffer& _extend)
