@@ -42,6 +42,6 @@ dependencies {
     compile 'javax.validation:validation-api:1.1.0.Final'
 }
 
-apply from: "${rootDir}/gradle/build_xlog_libraries.gradle"
-
-apply from: "bintray.gradle"
+//apply from: "${rootDir}/gradle/build_xlog_libraries.gradle"
+//
+//apply from: "bintray.gradle"
