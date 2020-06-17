@@ -1,16 +1,16 @@
 /*
-* Tencent is pleased to support the open source community by making Mars available.
-* Copyright (C) 2016 THL A29 Limited, a Tencent company. All rights reserved.
-*
-* Licensed under the MIT License (the "License"); you may not use this file except in 
-* compliance with the License. You may obtain a copy of the License at
-* http://opensource.org/licenses/MIT
-*
-* Unless required by applicable law or agreed to in writing, software distributed under the License is
-* distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-* either express or implied. See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Tencent is pleased to support the open source community by making Mars available.
+ * Copyright (C) 2016 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.tencent.mars.proxy;
 
@@ -19,11 +19,12 @@ import com.tencent.mars.logicserver.TopicChats;
 import com.tencent.mars.sample.chat.proto.Chat;
 import com.tencent.mars.sample.proto.Main;
 import com.tencent.mars.utils.LogUtils;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.glassfish.jersey.client.ClientConfig;
-
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCountUtil;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -31,17 +32,13 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.util.ReferenceCountUtil;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.glassfish.jersey.client.ClientConfig;
 
 /**
  * Created by zhaoyuan on 16/2/2.
@@ -59,7 +56,9 @@ public class NetMsgHeaderHandler extends ChannelInboundHandlerAdapter {
     }
 
     private ConcurrentHashMap<ChannelHandlerContext, Long> linkTimeout = new ConcurrentHashMap<>();
-    private ContextTimeoutChecker checker;
+    private ContextTimeoutChecker                          checker;
+
+    private ConcurrentHashMap<String, Channel> huihua    = new ConcurrentHashMap<>();
 
     public NetMsgHeaderHandler() {
         super();
@@ -72,10 +71,39 @@ public class NetMsgHeaderHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
-
         logger.info("client connected! " + ctx.toString());
         linkTimeout.put(ctx, System.currentTimeMillis());
         TopicChats.getInstance().joinTopic(ctx);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        logger.info("channelInactive " + ctx.toString());
+    }
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelRegistered(ctx);
+        logger.info("channelRegistered " + ctx.toString());
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        super.channelUnregistered(ctx);
+        logger.info("channelUnregistered " + ctx.toString());
+    }
+
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        super.handlerAdded(ctx);
+        logger.info("handlerAdded " + ctx.toString());
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        super.handlerRemoved(ctx);
+        logger.info("handlerRemoved " + ctx.toString());
     }
 
     @Override
@@ -87,7 +115,9 @@ public class NetMsgHeaderHandler extends ChannelInboundHandlerAdapter {
             boolean ret = msgXp.decode(socketInput);
             IOUtils.closeQuietly(socketInput);
 
-            if(!ret) return;
+            if (!ret) {
+                return;
+            }
 
             linkTimeout.remove(ctx);
             linkTimeout.put(ctx, System.currentTimeMillis());
@@ -106,10 +136,9 @@ public class NetMsgHeaderHandler extends ChannelInboundHandlerAdapter {
                         msgXp.body = IOUtils.toByteArray(inputStream);
                         IOUtils.closeQuietly(requestDataStream);
                         byte[] respBuf = msgXp.encode();
-                        logger.info(LogUtils.format( "client resp, cmdId=%d, seq=%d, resp.len=%d", msgXp.cmdId, msgXp.seq, msgXp.body == null ? 0 : msgXp.body.length));
+                        logger.info(LogUtils.format("client resp, cmdId=%d, seq=%d, resp.len=%d", msgXp.cmdId, msgXp.seq, msgXp.body == null ? 0 : msgXp.body.length));
                         ctx.writeAndFlush(ctx.alloc().buffer().writeBytes(respBuf));
-                    }
-                    else {
+                    } else {
 
                     }
                     break;
@@ -123,15 +152,15 @@ public class NetMsgHeaderHandler extends ChannelInboundHandlerAdapter {
                         byte[] respBuf = msgXp.encode();
                         logger.info(LogUtils.format("client resp, cmdId=%d, seq=%d, resp.len=%d", msgXp.cmdId, msgXp.seq, msgXp.body == null ? 0 : msgXp.body.length));
                         ctx.writeAndFlush(ctx.alloc().buffer().writeBytes(respBuf));
-                    }
-                    else {
+                    } else {
 
                     }
                     break;
                 case Main.CmdID.CMD_ID_SEND_MESSAGE_VALUE:
                     requestDataStream = new ByteArrayInputStream(msgXp.body);
-
+                    logger.info("proxy receive msg at " + System.currentTimeMillis());
                     inputStream = doHttpRequest(webCgi, requestDataStream);
+
                     if (inputStream != null) {
                         msgXp.body = IOUtils.toByteArray(inputStream);
                         Chat.SendMessageResponse response = Chat.SendMessageResponse.parseFrom(msgXp.body);
@@ -142,22 +171,38 @@ public class NetMsgHeaderHandler extends ChannelInboundHandlerAdapter {
                         byte[] respBuf = msgXp.encode();
                         logger.info(LogUtils.format("client resp, cmdId=%d, seq=%d, resp.len=%d", msgXp.cmdId, msgXp.seq, msgXp.body == null ? 0 : msgXp.body.length));
                         ctx.writeAndFlush(ctx.alloc().buffer().writeBytes(respBuf));
-                    }
-                    else {
+                    } else {
 
                     }
                     break;
                 case NetMsgHeader.CMDID_NOOPING:
                     byte[] respBuf = msgXp.encode();
                     logger.info(LogUtils.format("client resp, cmdId=%d, seq=%d, resp.len=%d", msgXp.cmdId, msgXp.seq, msgXp.body == null ? 0 : msgXp.body.length));
+                    String key = new String(msgXp.body);
+                    logger.info("key =  " + key);
+                    Channel channel1 = ctx.channel();
+                    logger.info("channel130 =  " + channel1);
+                    huihua.put(key, channel1);
                     ctx.writeAndFlush(ctx.alloc().buffer().writeBytes(respBuf));
+                    break;
+                case 131:
+                    String key1 = new String(msgXp.body);
+                    logger.info("key =  " + key1);
+                    NetMsgHeader msgHeader = new NetMsgHeader();
+                    msgHeader.body = "hello".getBytes();
+                    msgHeader.cmdId = 66;
+                    Channel channel = huihua.get(key1);
+                    logger.info("channel =  " + channel);
+                    ChannelHandlerContext context = channel.pipeline().context(this);
+                    logger.info("context =  " + context);
+                    context.writeAndFlush(context.alloc().buffer().writeBytes(msgHeader.encode()));
+                    ctx.writeAndFlush(ctx.alloc().buffer().writeBytes(msgXp.encode()));
                     break;
                 default:
                     break;
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
-
         } finally {
             ReferenceCountUtil.release(msg);
         }
@@ -172,16 +217,11 @@ public class NetMsgHeaderHandler extends ChannelInboundHandlerAdapter {
 
     /**
      * redirect request to webserver
-     * @param path
-     * @param data
-     * @return
      */
     private InputStream doHttpRequest(String path, InputStream data) {
         final Client client = ClientBuilder.newClient(new ClientConfig());
-        final InputStream response = client.target("http://localhost:8080/")
-                .path(path)
-                .request(MediaType.APPLICATION_OCTET_STREAM)
-                .post(Entity.entity(data, MediaType.APPLICATION_OCTET_STREAM), InputStream.class);
+        final InputStream response = client.target("http://localhost:8080/").path(path).request(MediaType.APPLICATION_OCTET_STREAM).post(
+            Entity.entity(data, MediaType.APPLICATION_OCTET_STREAM), InputStream.class);
 
         return response;
     }

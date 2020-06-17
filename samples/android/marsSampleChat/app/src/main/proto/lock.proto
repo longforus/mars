@@ -1,0 +1,20 @@
+package com.tencent.mars.sample.chat.proto;
+
+message LockResponse{
+  required int32 cabinetCode = 1;
+  required int32 boxCode = 2;
+  enum BoxSize{
+    LARGE = 0;
+    MIDEL = 1;
+    SMALL = 2;
+  }
+  required BoxSize boxSize = 3;
+  required bool isOpen = 4;
+  optional GetLockRequest request = 5;
+}
+
+message GetLockRequest{
+  required string sn = 1;
+  optional string address = 2;
+}
+

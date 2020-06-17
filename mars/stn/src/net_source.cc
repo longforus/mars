@@ -53,6 +53,7 @@ static std::string sg_longlink_debugip;
 
 static int sg_shortlink_port;
 static std::string sg_shortlink_debugip;
+static std::string global_nooping_body;
 static std::map< std::string, std::vector<std::string> > sg_host_backupips_mapping;
 static std::vector<uint16_t> sg_lowpriority_longlink_ports;
 
@@ -134,6 +135,14 @@ void NetSource::SetBackupIPs(const std::string& _host, const std::vector<std::st
 	sg_host_backupips_mapping[_host] = _ips;
 }
 
+void NetSource::SetNoopingBody(const std::string& _body) {
+	ScopedLock lock(sg_ip_mutex);
+
+	xgroup2_define(addr_print);
+	xinfo2(TSF"SetNoopingBody, body:%_", _body) >> addr_print;
+	global_nooping_body = _body;
+}
+
 void NetSource::SetDebugIP(const std::string& _host, const std::string& _ip) {
 	ScopedLock lock(sg_ip_mutex);
 
@@ -156,6 +165,10 @@ const std::string& NetSource::GetLongLinkDebugIP() {
 const std::string& NetSource::GetShortLinkDebugIP() {
     ScopedLock lock(sg_ip_mutex);
     return sg_shortlink_debugip;
+}
+const std::string& NetSource::GetNoopingBody() {
+    ScopedLock lock(sg_ip_mutex);
+    return global_nooping_body;
 }
 
 void NetSource::SetLowPriorityLonglinkPorts(const std::vector<uint16_t>& _lowpriority_longlink_ports) {

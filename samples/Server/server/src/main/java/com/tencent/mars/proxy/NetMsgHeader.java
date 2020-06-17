@@ -76,19 +76,18 @@ public class NetMsgHeader {
                 throw new InvalidHeaderException("invalid client version in header, clientVersion: " + clientVersion + " packlen: " + (headLength + bodyLen));
             }
 
-            logger.debug(LogUtils.format("dump clientVersion=%d, cmdid=%d, seq=%d, packlen=%d", clientVersion, cmdId, seq, (headLength + bodyLen)));
+            logger.debug(LogUtils.format("dump clientVersion=%d, cmdid=%d, seq=%d, headLength=%d,, bodyLen=%d", clientVersion, cmdId, seq, headLength , bodyLen));
 
             // read body?
             if (bodyLen > 0) {
                 body = new byte[bodyLen];
                 dis.readFully(body);
-
+                logger.info(new String(body));
             } else {
                 // no body?!
                 switch (cmdId) {
                     case CMDID_NOOPING:
                         break;
-
                     default:
                         throw new InvalidHeaderException("invalid header body, cmdid:" + cmdId);
                 }

@@ -70,11 +70,13 @@ class NetSource {
     static void SetShortlink(const uint16_t _port, const std::string& _debugip);
     //set backup ips for host, these ips would be used when host dns failed
     static void SetBackupIPs(const std::string& _host, const std::vector<std::string>& _ips);
+    static void SetNoopingBody(const std::string& _body);
     //set debug ip
     static void SetDebugIP(const std::string& _host, const std::string& _ip);
     static const std::string& GetLongLinkDebugIP();
     static const std::string& GetShortLinkDebugIP();
-    
+    static const std::string& GetNoopingBody();
+
     static void SetLowPriorityLonglinkPorts(const std::vector<uint16_t>& _lowpriority_longlink_ports);
 
     static void GetLonglinkPorts(std::vector<uint16_t>& _ports);
